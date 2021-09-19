@@ -10,20 +10,21 @@ METRICS_F1 = 'F1'
 METRICS_MAE = 'MAE'
 METRICS_MSE = 'MSE'
 
-class Model:
-    def __init__(self, X_cols, model, metrics) -> None:
+class ModelResult:
+    def __init__(self, X_cols, order, model, metrics_detail) -> None:
         self.X_cols = X_cols
+        self.order = order
         self.model = model
-        self.metrics = metrics
+        self.metrics_detail = metrics_detail
     
     def __str__(self):
-        return str(self.X_cols) + ' -> ' + str(self.metrics)
+        return str(self.X_cols) + ' -> ' + str(self.metrics_detail)
     
     def __repr__(self):
         return str(self)
     
     def getMetric(self, metric):
-        return self.metrics[metric]
+        return self.metrics_detail[metric]
 
     def getF1(self):
         return self.getMetric(METRICS_F1)
@@ -40,37 +41,26 @@ class LinearRegression:
         self.__ds_onlynums = self.__ds_full.select_dtypes(exclude=['object'])
         self.__X_full = self.__ds_onlynums.drop(columns=[y_colname])
         self.__Y_full = self.__ds_onlynums[[y_colname]]
-        self.__results = {}
-        self.__best_metric_result = 0 #bestF1
+        self.__results = None
         self.metric_order = metric_order
-        self.__best_model = None
         
     def getBestModel(self):
-        if self.__best_model == None:
-            self.getResults() #call to force the execution
-            
-        return self.__best_model
+        return self.getResults()[0]
     
-    def getReportStr(self):
-        strReport = []
-        for model in self.getResults().values():
-            strReport.append(model)
-        return strReport
-                        
     def getResults(self, buffer=True):
-        if buffer and len(self.__results) > 0:
+        if buffer and self.__results is not None:
             return self.__results
         #else to get results
+        self.__results = []
         
         for col_tuple in all_subsets(self.__X_full.columns):
             if len(col_tuple) == 0:
                 continue
             col_list = list(col_tuple)
-            self.__results[col_tuple] = self.__score_dataset(col_list)
-            if self.__results[col_tuple].getF1() > self.__best_metric_result: #TODO: #1 to implement to other metrics
-                self.__best_metric_result = self.__results[col_tuple].getF1()
-                self.__best_model = self.__results[col_tuple] 
-            
+            self.__results.append(self.__score_dataset(col_list))
+        
+        self.__results = sorted(self.__results, key=lambda x: x.order)
+                            
         return self.__results           
         
     def __score_dataset(self, x_cols):
@@ -98,14 +88,17 @@ class LinearRegression:
         f1 = r2_score(y_valid2, preds)
         mse = mean_squared_error(y_valid2, preds)
         
-        return Model(x_cols, model, {'MAE': mae, 'F1': f1, 'MSE': mse})
+        return ModelResult(x_cols, (1-f1), model, {METRICS_MAE: mae, METRICS_F1: f1, METRICS_MSE: mse})
+        #return [x_cols, f1, {METRICS_MAE: mae, METRICS_F1: f1, METRICS_MSE: mse}, model]
 
 #util methods
 def all_subsets(ss):
     return chain(*map(lambda x: combinations(ss, x), range(0, len(ss)+1)))
 
 
+'''
 from ds_utils import getDSPriceHousing
 lr = LinearRegression(getDSPriceHousing(), 'Price')
 model = lr.getBestModel()
-print(lr.getReportStr())
+print(lr.getResults())
+'''
