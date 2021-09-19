@@ -3,6 +3,7 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn import linear_model
 import numpy as np
+from itertools import chain, combinations
 
 METRICS_F1 = 'F1'
 METRICS_MAE = 'MAE'
@@ -48,11 +49,14 @@ class LinearRegression:
             return self.__results
         #else to get results
         
-        for col in self.__X_full.columns:
-            self.__results[col] = self.__score_dataset(col)
-            if self.__results[col].getF1() > self.__best_metric_result: #TODO: #1 to implement to other metrics
-                self.__best_metric_result = self.__results[col].getF1()
-                self.__best_model = self.__results[col] 
+        for col_tuple in all_subsets(self.__X_full.columns):
+            if len(col_tuple) == 0:
+                continue
+            col_list = list(col_tuple)
+            self.__results[col_tuple] = self.__score_dataset(col_list)
+            if self.__results[col_tuple].getF1() > self.__best_metric_result: #TODO: #1 to implement to other metrics
+                self.__best_metric_result = self.__results[col_tuple].getF1()
+                self.__best_model = self.__results[col_tuple] 
             
         return self.__results           
         
@@ -62,11 +66,18 @@ class LinearRegression:
         X_train, X_valid, y_train, y_valid = train_test_split(X, y, train_size=0.8, test_size=0.2, random_state=0)
         
         model = linear_model.LinearRegression()
-        X_train2 = np.asanyarray(X_train).reshape(-1, 1)
-        X_valid2 = np.asanyarray(X_valid).reshape(-1, 1)
-        y_train2 = np.asanyarray(y_train).reshape(-1, 1)
-        y_valid2 = np.asanyarray(y_valid).reshape(-1, 1)
+
+        X_train2 = X_train
+        X_valid2 = X_valid
+        y_train2 = y_train
+        y_valid2 = y_valid
         
+        if len(x_cols)==1:
+            X_train2 = np.asanyarray(X_train).reshape(-1, 1)
+            X_valid2 = np.asanyarray(X_valid).reshape(-1, 1)
+            y_train2 = np.asanyarray(y_train).reshape(-1, 1)
+            y_valid2 = np.asanyarray(y_valid).reshape(-1, 1)
+
         model.fit(X_train2, y_train2)
         preds = model.predict(X_valid2)
         
@@ -75,3 +86,14 @@ class LinearRegression:
         mse = mean_squared_error(y_valid2, preds)
         
         return Model(x_cols, model, {'MAE': mae, 'F1': f1, 'MSE': mse})
+
+#util methods
+def all_subsets(ss):
+    return chain(*map(lambda x: combinations(ss, x), range(0, len(ss)+1)))
+
+'''
+from ds_utils import getDSPriceHousing
+lr = LinearRegression(getDSPriceHousing(), 'Price')
+model = lr.getBestModel()
+print(model.X_cols)
+'''
