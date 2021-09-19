@@ -1,3 +1,4 @@
+from sklearn import metrics
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import r2_score, mean_squared_error
@@ -14,6 +15,12 @@ class Model:
         self.X_cols = X_cols
         self.model = model
         self.metrics = metrics
+    
+    def __str__(self):
+        return str(self.X_cols) + ' -> ' + str(self.metrics)
+    
+    def __repr__(self):
+        return str(self)
     
     def getMetric(self, metric):
         return self.metrics[metric]
@@ -44,6 +51,12 @@ class LinearRegression:
             
         return self.__best_model
     
+    def getReportStr(self):
+        strReport = []
+        for model in self.getResults().values():
+            strReport.append(model)
+        return strReport
+                        
     def getResults(self, buffer=True):
         if buffer and len(self.__results) > 0:
             return self.__results
@@ -91,9 +104,8 @@ class LinearRegression:
 def all_subsets(ss):
     return chain(*map(lambda x: combinations(ss, x), range(0, len(ss)+1)))
 
-'''
+
 from ds_utils import getDSPriceHousing
 lr = LinearRegression(getDSPriceHousing(), 'Price')
 model = lr.getBestModel()
-print(model.X_cols)
-'''
+print(lr.getReportStr())
