@@ -5,6 +5,7 @@ from sklearn.metrics import r2_score, mean_squared_error
 from sklearn import linear_model
 import numpy as np
 from itertools import chain, combinations
+from sklearn import preprocessing
 
 METRICS_F1 = 'F1'
 METRICS_MAE = 'MAE'
@@ -66,7 +67,13 @@ class LinearRegression:
     def __score_dataset(self, x_cols):
         X = self.__ds_onlynums[x_cols]
         y = self.__Y_full
-        X_train, X_valid, y_train, y_valid = train_test_split(X, y, train_size=0.8, test_size=0.2, random_state=0)
+        
+        #normalizing the variables
+        min_max_scaler = preprocessing.MinMaxScaler()
+        X_normal = min_max_scaler.fit_transform(X)
+        y_normal = min_max_scaler.fit_transform(y)
+        
+        X_train, X_valid, y_train, y_valid = train_test_split(X_normal, y_normal, train_size=0.8, test_size=0.2, random_state=0)
         
         model = linear_model.LinearRegression()
 
@@ -102,3 +109,4 @@ lr = LinearRegression(getDSPriceHousing(), 'Price')
 model = lr.getBestModel()
 print(lr.getResults())
 '''
+
