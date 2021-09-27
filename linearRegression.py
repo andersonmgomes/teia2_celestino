@@ -7,7 +7,8 @@ import numpy as np
 from itertools import chain, combinations
 from sklearn import preprocessing
 
-METRICS_F1 = 'F1'
+#METRICS_F1 = 'F1'
+METRICS_R2 = 'R2'
 METRICS_MAE = 'MAE'
 METRICS_MSE = 'MSE'
 
@@ -27,8 +28,8 @@ class ModelResult:
     def getMetric(self, metric):
         return self.metrics_detail[metric]
 
-    def getF1(self):
-        return self.getMetric(METRICS_F1)
+    def getR2(self):
+        return self.getMetric(METRICS_R2)
 
     def getMAE(self):
         return self.getMetric(METRICS_MAE)
@@ -37,7 +38,7 @@ class ModelResult:
         return self.getMetric(METRICS_MSE)
 
 class LinearRegression:
-    def __init__(self, ds, y_colname, metric_order=METRICS_F1) -> None:
+    def __init__(self, ds, y_colname, metric_order=METRICS_R2) -> None:
         self.__ds_full = ds
         self.__ds_onlynums = self.__ds_full.select_dtypes(exclude=['object'])
         self.__X_full = self.__ds_onlynums.drop(columns=[y_colname])
@@ -92,10 +93,10 @@ class LinearRegression:
         preds = model.predict(X_valid2)
         
         mae = mean_absolute_error(y_valid2, preds)
-        f1 = r2_score(y_valid2, preds)
+        r2 = r2_score(y_valid2, preds)
         mse = mean_squared_error(y_valid2, preds)
         
-        return ModelResult(x_cols, (1-f1), model, {METRICS_MAE: mae, METRICS_F1: f1, METRICS_MSE: mse})
+        return ModelResult(x_cols, (1-r2), model, {METRICS_MAE: mae, METRICS_R2: r2, METRICS_MSE: mse})
         #return [x_cols, f1, {METRICS_MAE: mae, METRICS_F1: f1, METRICS_MSE: mse}, model]
 
 #util methods
