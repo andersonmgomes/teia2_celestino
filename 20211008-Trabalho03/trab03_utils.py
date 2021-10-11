@@ -8,6 +8,17 @@ DS_PATH = 'datasets/'
 def getDSFuelConsumptionCo2():
     return pd.read_csv(DS_PATH + 'FuelConsumptionCo2.csv')
 
+def getDSFuelConsumptionCo2_ClassProb():
+    df = getDSFuelConsumptionCo2()
+    co2_50 = df.CO2EMISSIONS.describe()['50%']
+    df['CO2_HighLevel'] = 0
+    for i, row in df.iterrows():
+        if row.CO2EMISSIONS > co2_50:
+            df.loc[i, 'CO2_HighLevel'] = 1
+    
+    return df.drop('CO2EMISSIONS', axis=1)
+            
+        
 def getDSPriceHousing():
     return pd.read_csv(DS_PATH + 'USA-priceHousing.csv')
 
